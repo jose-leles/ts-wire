@@ -4,9 +4,22 @@
   "description": "Socket.IO integration for ts-wire",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": { "build": "tsc" },
+  "scripts": {
+    "build": "tsc"
+  },
   "license": "MIT",
-  "peerDependencies": { "@ts-wire/core": "^0.1.0" },
-  "dependencies": { "socket.io": "^4.7.0" },
-  "devDependencies": { "@ts-wire/core": "*", "@types/node": "^20.0.0", "typescript": "^5.0.0" }
+  "peerDependencies": {
+    "@ts-wire/core": "^0.1.0"
+  },
+  "dependencies": {
+    "socket.io": "^4.7.0"
+  },
+  "devDependencies": {
+    "@ts-wire/core": "*",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist"
+  ]
 }

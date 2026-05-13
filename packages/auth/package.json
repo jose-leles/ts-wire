@@ -7,7 +7,13 @@
   "scripts": {
     "build": "tsc"
   },
-  "keywords": ["typescript", "express", "jwt", "auth", "decorators"],
+  "keywords": [
+    "typescript",
+    "express",
+    "jwt",
+    "auth",
+    "decorators"
+  ],
   "license": "MIT",
   "peerDependencies": {
     "@ts-wire/core": "^0.1.0"
@@ -20,5 +26,8 @@
     "@types/jsonwebtoken": "^9.0.0",
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

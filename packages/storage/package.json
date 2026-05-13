@@ -7,7 +7,13 @@
   "scripts": {
     "build": "tsc"
   },
-  "keywords": ["typescript", "express", "multer", "upload", "s3"],
+  "keywords": [
+    "typescript",
+    "express",
+    "multer",
+    "upload",
+    "s3"
+  ],
   "license": "MIT",
   "peerDependencies": {
     "@ts-wire/core": "^0.1.0"
@@ -20,5 +26,8 @@
     "@types/multer": "^1.4.7",
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

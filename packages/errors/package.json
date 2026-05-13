@@ -7,6 +7,14 @@
   "scripts": {
     "build": "tsc"
   },
-  "keywords": ["typescript", "express", "errors", "http"],
-  "license": "MIT"
+  "keywords": [
+    "typescript",
+    "express",
+    "errors",
+    "http"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ]
 }
