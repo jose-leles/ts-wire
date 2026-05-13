@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/logo.svg" width="100" alt="ts-wire" />
+  <img src=".github/logo.png" width="100" alt="ts-wire" />
 </p>
 
 <h1 align="center">ts-wire</h1>
