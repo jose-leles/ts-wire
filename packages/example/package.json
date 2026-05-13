@@ -1,0 +1,25 @@
+{
+  "name": "@ts-wire/example",
+  "version": "0.1.0",
+  "description": "Example app using ts-wire",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@ts-wire/auth": "^0.1.0",
+    "@ts-wire/cache": "^0.1.0",
+    "@ts-wire/core": "^0.1.0",
+    "@ts-wire/errors": "^0.1.0",
+    "@ts-wire/storage": "^0.1.0",
+    "@ts-wire/validate": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

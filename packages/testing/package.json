@@ -1,0 +1,23 @@
+{
+  "name": "@ts-wire/testing",
+  "version": "0.1.0",
+  "description": "Testing utilities for ts-wire applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["typescript", "express", "testing", "jest", "supertest"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ts-wire/core": "^0.1.0"
+  },
+  "dependencies": {
+    "supertest": "^6.3.3"
+  },
+  "devDependencies": {
+    "@types/supertest": "^2.0.12",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@ts-wire/storage",
+  "version": "0.1.0",
+  "description": "File upload decorator for ts-wire",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["typescript", "express", "multer", "upload", "s3"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ts-wire/core": "^0.1.0"
+  },
+  "dependencies": {
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "@types/multer": "^1.4.7",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

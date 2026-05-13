@@ -1,0 +1,23 @@
+{
+  "name": "@ts-wire/validate",
+  "version": "0.1.0",
+  "description": "DTO validation decorator for ts-wire",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["typescript", "express", "validation", "dto", "decorators"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ts-wire/core": "^0.1.0"
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
