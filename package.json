@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @ts-wire/core && npm run build -w @ts-wire/errors && npm run build -w @ts-wire/auth && npm run build -w @ts-wire/validate && npm run build -w @ts-wire/cache && npm run build -w @ts-wire/storage && npm run build -w @ts-wire/testing && npm run build -w @ts-wire/example",
+    "build": "npm run build -w @ts-wire/core && npm run build -w @ts-wire/errors && npm run build -w @ts-wire/auth && npm run build -w @ts-wire/validate && npm run build -w @ts-wire/cache && npm run build -w @ts-wire/storage && npm run build -w @ts-wire/testing && npm run build -w @ts-wire/swagger && npm run build -w @ts-wire/socket && npm run build -w @ts-wire/example",
     "test": "jest",
     "clean": "npx rimraf packages/*/dist"
   },

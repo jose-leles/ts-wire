@@ -1,0 +1,12 @@
+{
+  "name": "@ts-wire/rate-limit",
+  "version": "0.1.0",
+  "description": "Rate limiting decorator for ts-wire",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": { "build": "tsc" },
+  "license": "MIT",
+  "peerDependencies": { "@ts-wire/core": "^0.1.0" },
+  "dependencies": { "express-rate-limit": "^7.0.0" },
+  "devDependencies": { "@ts-wire/core": "*", "@types/node": "^20.0.0", "typescript": "^5.0.0" }
+}
