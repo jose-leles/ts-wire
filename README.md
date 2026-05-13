@@ -62,34 +62,21 @@ That's it. No router setup, no `app.use`, no middleware plumbing.
 
 ## Real world
 
-Auth, validation, and dependency injection — same mental model, just add decorators.
-
-```typescript
-// schemas/in/create-user.ts
-import { z } from 'zod';
-export const CreateUserSchema = z.object({
-  name:  z.string().min(2),
-  email: z.string().email(),
-});
-export type CreateUserInput = z.infer<typeof CreateUserSchema>;
-```
+Same mental model — just add decorators as you need them.
 
 ```typescript
 // components.ts
 import { UserService } from './services/user.service';
 export const components = { userService: new UserService() } as const;
 export type Components = typeof components;
-```
 
-```typescript
 // controllers/user.controller.ts
 import { Controller, Get, Post, With } from '@ts-wire/core';
 import { RequireAuth } from '@ts-wire/auth';
 import { Validate } from '@ts-wire/validate';
-import type { Request, Response } from 'express';
 import { CreateUserSchema } from '../schemas/in/create-user';
-import { components } from '../components';
-import type { Components } from '../components';
+import { components, type Components } from '../components';
+import type { Request, Response } from 'express';
 
 @Controller('/users')
 @RequireAuth()
@@ -106,19 +93,10 @@ export class UserController {
     res.status(201).json(userService.create(req.body));
   }
 }
-```
 
-```typescript
 // index.ts
-import { app } from '@ts-wire/core';
-import { configureAuth } from '@ts-wire/auth';
-import { UserController } from './controllers/user.controller';
-import { components } from './components';
-
 configureAuth({ secret: process.env.JWT_SECRET! });
-
-app.bootstrap({ controllers: [UserController], components })
-   .listen(3000, () => console.log('http://localhost:3000'));
+app.bootstrap({ controllers: [UserController], components }).listen(3000);
 ```
 
 ---
