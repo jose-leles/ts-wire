@@ -37,6 +37,34 @@ All other packages are optional — install only what you use.
 ## Quick Start
 
 ```typescript
+import { app, Controller, Get, Post } from '@ts-wire/core';
+import type { Request, Response } from 'express';
+
+@Controller('/users')
+class UserController {
+  @Get('/')
+  list(_req: Request, res: Response) {
+    res.json([{ id: 1, name: 'Alice' }]);
+  }
+
+  @Post('/')
+  create(req: Request, res: Response) {
+    res.status(201).json({ id: 2, ...req.body });
+  }
+}
+
+app.bootstrap({ controllers: [UserController] }).listen(3000);
+```
+
+That's it. No router setup, no `app.use`, no middleware plumbing.
+
+---
+
+## Real world
+
+Auth, validation, and dependency injection — same mental model, just add decorators.
+
+```typescript
 // schemas/in/create-user.ts
 import { z } from 'zod';
 export const CreateUserSchema = z.object({
@@ -47,17 +75,25 @@ export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 ```
 
 ```typescript
+// components.ts
+import { UserService } from './services/user.service';
+export const components = { userService: new UserService() } as const;
+export type Components = typeof components;
+```
+
+```typescript
 // controllers/user.controller.ts
 import { Controller, Get, Post, With } from '@ts-wire/core';
 import { RequireAuth } from '@ts-wire/auth';
 import { Validate } from '@ts-wire/validate';
 import type { Request, Response } from 'express';
 import { CreateUserSchema } from '../schemas/in/create-user';
+import { components } from '../components';
 import type { Components } from '../components';
 
 @Controller('/users')
 @RequireAuth()
-@With({ userService: components.userService })
+@With(components)
 export class UserController {
   @Get('/')
   list(_req: Request, res: Response, { userService }: Components) {
@@ -67,8 +103,7 @@ export class UserController {
   @Post('/')
   @Validate(CreateUserSchema)
   create(req: Request, res: Response, { userService }: Components) {
-    const user = userService.create(req.body);
-    res.status(201).json(user);
+    res.status(201).json(userService.create(req.body));
   }
 }
 ```
@@ -82,10 +117,8 @@ import { components } from './components';
 
 configureAuth({ secret: process.env.JWT_SECRET! });
 
-app.bootstrap({
-  controllers: [UserController],
-  components,
-}).listen(3000, () => console.log('http://localhost:3000'));
+app.bootstrap({ controllers: [UserController], components })
+   .listen(3000, () => console.log('http://localhost:3000'));
 ```
 
 ---
