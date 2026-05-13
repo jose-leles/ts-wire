@@ -4,14 +4,14 @@ import { RequireAuth } from '@ts-wire/auth';
 import { Validate } from '@ts-wire/validate';
 import { Cache, Idempotent } from '@ts-wire/cache';
 import { UserService } from '../services/user.service';
-import { CreateUserDto } from '../dtos/create-user.dto';
+import { CreateUserSchema } from '../dtos/create-user.dto';
 
 @Controller('/users')
 @With({ userService: UserService })
 export class UserController {
   @Get('/')
   @Cache({ ttlMs: 30_000 })
-  list(req: Request, res: Response, { userService }: { userService: UserService }) {
+  list(_req: Request, res: Response, { userService }: { userService: UserService }) {
     res.json(userService.findAll());
   }
 
@@ -23,7 +23,7 @@ export class UserController {
   }
 
   @Post('/')
-  @Validate(CreateUserDto)
+  @Validate(CreateUserSchema)
   @Idempotent()
   create(req: Request, res: Response, { userService }: { userService: UserService }) {
     const user = userService.create(req.body);

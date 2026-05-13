@@ -8,7 +8,7 @@ export interface FileOptions {
   storage?: StorageEngine;
 }
 
-export function RequireFile(options: FileOptions = {}): MethodDecorator {
+export function RequireFile(options: FileOptions = {}) {
   const {
     field = 'file',
     maxSizeMb = 10,
@@ -41,5 +41,5 @@ export function RequireFile(options: FileOptions = {}): MethodDecorator {
     });
   };
 
-  return Use(middleware) as unknown as MethodDecorator;
+  return Use(middleware);
 }

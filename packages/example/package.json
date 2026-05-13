@@ -10,12 +10,13 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@ts-wire/auth": "^0.1.0",
-    "@ts-wire/cache": "^0.1.0",
-    "@ts-wire/core": "^0.1.0",
-    "@ts-wire/errors": "^0.1.0",
-    "@ts-wire/storage": "^0.1.0",
-    "@ts-wire/validate": "^0.1.0"
+    "@ts-wire/auth": "*",
+    "@ts-wire/cache": "*",
+    "@ts-wire/core": "*",
+    "@ts-wire/errors": "*",
+    "@ts-wire/storage": "*",
+    "@ts-wire/validate": "*",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

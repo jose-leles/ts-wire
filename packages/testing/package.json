@@ -16,6 +16,7 @@
     "supertest": "^6.3.3"
   },
   "devDependencies": {
+    "@ts-wire/core": "*",
     "@types/supertest": "^2.0.12",
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
