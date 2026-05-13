@@ -3,14 +3,14 @@
 **TypeScript + Express decorator framework — clean, simple, vibe-coding ready**
 
 ![npm version](https://img.shields.io/npm/v/@ts-wire/core?style=flat-square)
-![GitHub stars](https://img.shields.io/github/stars/joseb/ts-wire?style=flat-square)
+![GitHub stars](https://img.shields.io/github/stars/jose-leles/ts-wire?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
 ---
 
 ## What
 
-ts-wire wraps Express with TC39 Stage 3 decorators (no `experimentalDecorators`, no `reflect-metadata` needed). The library owns the **communication layer** — routing, middleware, auth, validation, caching. You own **business logic and output**.
+ts-wire wraps Express with TC39 Stage 3 decorators — no `experimentalDecorators`, no `reflect-metadata`. The library owns the **communication layer**: routing, middleware, auth, validation, caching. You own **business logic and output**.
 
 Built for vibe coding: describe what you want, get working routes.
 
@@ -29,35 +29,40 @@ All other packages are optional — install only what you use.
 ## Quick Start
 
 ```typescript
-// controllers/post.controller.ts
-import { Controller, Post, Get, With } from '@ts-wire/core';
+// schemas/in/create-user.ts
+import { z } from 'zod';
+export const CreateUserSchema = z.object({
+  name:  z.string().min(2),
+  email: z.string().email(),
+});
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+```
+
+```typescript
+// controllers/user.controller.ts
+import { Controller, Get, Post, With } from '@ts-wire/core';
 import { RequireAuth } from '@ts-wire/auth';
 import { Validate } from '@ts-wire/validate';
 import { Cache } from '@ts-wire/cache';
-import { z } from 'zod';
 import type { Request, Response } from 'express';
-import type { Container } from '../infra/container';
+import { CreateUserSchema } from '../schemas/in/create-user';
+import type { Components } from '../components';
 
-const CreatePostSchema = z.object({
-  title: z.string().min(1),
-  body:  z.string().min(1),
-});
-
-@Controller('/posts')
+@Controller('/users')
 @RequireAuth()
-@With({ rateLimit: 100 })
-export class PostController {
+@With({ userService: components.userService })
+export class UserController {
   @Get('/')
   @Cache({ ttlMs: 30_000 })
-  list(req: Request, res: Response, { postService }: Container) {
-    res.json(postService.findAll());
+  list(_req: Request, res: Response, { userService }: Components) {
+    res.json(userService.findAll());
   }
 
   @Post('/')
-  @Validate(CreatePostSchema)
-  create(req: Request, res: Response, { postService }: Container) {
-    const post = postService.create(req.body); // body is typed + validated
-    res.status(201).json(post);
+  @Validate(CreateUserSchema)
+  create(req: Request, res: Response, { userService }: Components) {
+    const user = userService.create(req.body);
+    res.status(201).json(user);
   }
 }
 ```
@@ -66,53 +71,117 @@ export class PostController {
 // index.ts
 import { app } from '@ts-wire/core';
 import { configureAuth } from '@ts-wire/auth';
-import { PostController } from './controllers/post.controller';
-import { container } from './infra/container';
+import { UserController } from './controllers/user.controller';
+import { components } from './components';
 
 configureAuth({ secret: process.env.JWT_SECRET! });
 
-const server = app.bootstrap({
-  controllers: [PostController],
-  components: container,
-});
-
-server.listen(3000, () => console.log('http://localhost:3000'));
+app.bootstrap({
+  controllers: [UserController],
+  components,
+}).listen(3000, () => console.log('http://localhost:3000'));
 ```
 
 ---
 
 ## Architecture
 
-ts-wire only touches the **Controller** layer. Services and infra are plain classes — no decorators, no magic.
+ts-wire handles every **entry point** — the channel that triggers your logic. Business logic lives in services and knows nothing about channels.
 
 ```
-Controller  →  HTTP input/output             (@ts-wire handles this)
-Service     →  business logic (plain class)  (you write this)
-Infra       →  DB, email, S3 (plain class)   (you write this)
+Entry Points (ts-wire handles):
+  controllers/    ← triggered by HTTP
+  schedulers/     ← triggered by time (cron)
+  consumers/      ← triggered by message queue
+
+Business Logic:
+  services/       ← domain logic, channel-agnostic
+
+Infrastructure (via components):
+  DB clients, queue producers, email senders, external APIs
+
+Schemas:
+  schemas/in/     ← input validation per channel (Zod)
+  schemas/models/ ← domain types (what services work with)
+  schemas/out/    ← output types (response shapes, published events)
 ```
 
-Wire dependencies manually with a container — explicit, easy to test, easy to trace:
+**The key rule:** services only know `models/`. Entry points map their input format → domain model before calling the service. The same `UserService` is callable from an HTTP controller, a cron job, or a queue consumer.
+
+```
+HTTP req → @Validate(CreateUserSchema)   (in/)
+         → controller maps to UserModel  (models/)
+         → userService.create(model)
+         → service publishes event        (via components.queue)
+         → controller maps to response   (out/)
+         → res.json(response)
+```
+
+### components.ts
+
+Wire all dependencies in one explicit file. No magic DI — you control construction order and can trace every dependency by reading one file.
 
 ```typescript
-// infra/container.ts
+// components.ts
+import { DatabaseClient } from './infra/database';
+import { QueueClient }    from './infra/queue';
+import { EmailService }   from './infra/email';
+import { UserService }    from './services/user.service';
+import { OrderService }   from './services/order.service';
+
 const db    = new DatabaseClient(process.env.DATABASE_URL!);
+const queue = new QueueClient(process.env.QUEUE_URL!);
 const email = new EmailService(process.env.SMTP_KEY!);
 
-export const container = {
+export const components = {
   db,
+  queue,   // producer — called from services
   email,
-  userService: new UserService(db, email),
+  userService:  new UserService(db, queue, email),
+  orderService: new OrderService(db, queue),
 } as const;
 
-export type Container = typeof container;
+export type Components = typeof components;
 ```
 
 ```typescript
 // index.ts
 app.bootstrap({
-  controllers: [UserController],
-  components: container,   // passed as 3rd arg to every handler
+  controllers: [UserController, OrderController],
+  components,
 });
+```
+
+### Multiple entry points, same service
+
+```typescript
+// controllers/user.controller.ts — HTTP trigger
+@Controller('/users')
+export class UserController {
+  @Post('/') @Validate(RegisterSchema)
+  register(req, res, { userService }: Components) {
+    const user = await userService.register(req.body);
+    res.status(201).json(user);
+  }
+}
+
+// consumers/user.consumer.ts — queue trigger
+@Consumer('user.import')
+export class UserImportConsumer {
+  @OnMessage()
+  async handle(msg, { userService }: Components) {
+    await userService.register(msg.payload);
+  }
+}
+
+// schedulers/user.scheduler.ts — time trigger
+@Scheduler()
+export class UserScheduler {
+  @Cron('0 2 * * *', { name: 'cleanup-inactive' })
+  async cleanup({ userService }: Components) {
+    await userService.removeInactive({ olderThanDays: 90 });
+  }
+}
 ```
 
 ---
@@ -130,7 +199,7 @@ app.bootstrap({
 | `@ts-wire/rate-limit` | `npm i @ts-wire/rate-limit` | `@RateLimit({ max?, windowMs?, message? })` — express-rate-limit wrapper |
 | `@ts-wire/socket` | `npm i @ts-wire/socket` | `@SocketController`, `@OnEvent`, `@OnConnect`, `@OnDisconnect`, `SocketService` |
 | `@ts-wire/scheduler` | `npm i @ts-wire/scheduler` | `@Scheduler`, `@Cron('* * * * *')`, `TsScheduler` |
-| `@ts-wire/swagger` | `npm i @ts-wire/swagger` | `@ApiDoc({ summary })`, `@ApiTag(tag)`, `setupSwagger(app, controllers)` |
+| `@ts-wire/swagger` | `npm i @ts-wire/swagger` | `setupSwagger(app, controllers)`, optional `@ApiDoc`, `@ApiTag` |
 | `@ts-wire/testing` | `npm i -D @ts-wire/testing` | `createTestApp(options)`, `mockComponents(overrides)` — supertest wrapper |
 
 ---
@@ -139,56 +208,51 @@ app.bootstrap({
 
 ### `@Controller(basePath)`
 
-Marks a class as a route controller and sets the base path.
-
 ```typescript
 @Controller('/users')
 export class UserController { ... }
 ```
 
-### HTTP method decorators
-
-`@Get`, `@Post`, `@Put`, `@Patch`, `@Delete` — all accept a path string.
+### HTTP decorators — `@Get` `@Post` `@Put` `@Patch` `@Delete`
 
 ```typescript
 @Get('/:id')
-getOne(req: Request, res: Response, { userService }: Container) {
+getOne(req: Request, res: Response, { userService }: Components) {
   res.json(userService.findById(Number(req.params.id)));
 }
 ```
 
 ### `@With(components)`
 
-Inject additional components into specific routes (merged with global container).
-Class-level applies to all routes; method-level merges; route-level wins on conflicts.
+Injects components into a controller (all routes) or a single route. Method-level merges with class-level; conflicts resolved in favor of the inner decorator.
 
 ```typescript
 @Controller('/admin')
-@With({ adminService })       // available on every route
+@With({ adminService: components.adminService })
 export class AdminController {
-  @Get('/stats')
-  @With({ statsService })     // merged for this route only
-  stats(req, res, { adminService, statsService }: any) { ... }
+  @Get('/report')
+  @With({ reportService: components.reportService })
+  report(req, res, { adminService, reportService }: any) { ... }
 }
 ```
 
-### `@Use(...middlewares)`
+### `@Use(middleware)`
 
-Attach Express middlewares. Stacks the same way as `@With` — class-level runs first, then route-level.
+Attaches Express middleware. Class-level runs before route-level.
 
 ```typescript
 @Controller('/api')
-@Use(logger)
+@Use(requestLogger)
 export class ApiController {
-  @Post('/secret')
-  @Use(rateLimiter)
-  secret(req, res, components) { ... }
+  @Post('/upload')
+  @Use(antiVirusMiddleware)
+  upload(req, res, components) { ... }
 }
 ```
 
-### `@RequireAuth()` (`@ts-wire/auth`)
+### `@RequireAuth()` — `@ts-wire/auth`
 
-Validates `Authorization: Bearer <token>`. Can be placed on the class (all routes) or a single method.
+Validates `Authorization: Bearer <token>`. Class or method level.
 
 ```typescript
 configureAuth({ secret: process.env.JWT_SECRET! });
@@ -198,75 +262,89 @@ configureAuth({ secret: process.env.JWT_SECRET! });
 export class ProfileController { ... }
 ```
 
-### `@Validate(schema, source?)` (`@ts-wire/validate`)
+### `@Validate(schema, source?)` — `@ts-wire/validate`
 
-Validates and replaces `req.body` (default) with the parsed Zod output. Pass `'query'` or `'params'` to validate other sources.
+Validates and replaces `req[source]` with the Zod-parsed output. Source defaults to `'body'`.
 
 ```typescript
-const Schema = z.object({ name: z.string() });
+// schemas/in/update-user.ts
+export const UpdateUserSchema = z.object({ name: z.string().min(2) });
 
-@Post('/')
-@Validate(Schema)
-create(req: Request, res: Response, components) {
-  // req.body is typed and extra fields are stripped
+// controller
+@Put('/:id')
+@Validate(UpdateUserSchema)
+update(req: Request, res: Response, { userService }: Components) {
+  const user = userService.update(Number(req.params.id), req.body);
+  res.json(user);
 }
 ```
 
-### `@Cache({ ttlMs, key?, store? })` (`@ts-wire/cache`)
-
-Caches the response. Default key: `METHOD:URL`. Provide a `key` function for custom cache keys.
+### `@Cache` and `@Idempotent` — `@ts-wire/cache`
 
 ```typescript
 @Get('/')
 @Cache({ ttlMs: 60_000 })
 list(req, res, components) { ... }
-```
 
-### `@Idempotent({ header?, ttlMs? })` (`@ts-wire/cache`)
-
-Reads the `Idempotency-Key` header and returns the stored response if the key has been seen before.
-
-```typescript
 @Post('/payments')
 @Idempotent({ ttlMs: 86_400_000 })
 pay(req, res, components) { ... }
 ```
 
-### Error classes (`@ts-wire/errors`)
+### `@RateLimit` — `@ts-wire/rate-limit`
 
-Throw these anywhere — the built-in error handler serializes them with the correct HTTP status code.
+```typescript
+@Controller('/api')
+@RateLimit({ max: 100, windowMs: 60_000 })
+export class ApiController { ... }
+```
+
+### Swagger — `@ts-wire/swagger`
+
+Auto-generates OpenAPI 3.0 spec from your existing decorators. Call `setupSwagger` after bootstrap — no changes to controllers required. `@ApiDoc` and `@ApiTag` are optional enhancements.
+
+```typescript
+import { setupSwagger } from '@ts-wire/swagger';
+
+const server = app.bootstrap({ controllers });
+setupSwagger(server, controllers, { title: 'My API', version: '1.0.0' });
+
+// GET /api-docs   → OpenAPI JSON spec
+// GET /api-docs/ui/ → Swagger UI
+```
+
+### Error classes — `@ts-wire/errors`
+
+Throw anywhere — the built-in error handler serializes them with the correct HTTP status.
 
 ```typescript
 import { NotFound, BadRequest, Unauthorized } from '@ts-wire/errors';
 
-throw new NotFound('User not found');
-throw new BadRequest('Invalid input');
-throw new Unauthorized('Token expired');
+throw new NotFound('User not found');       // → 404
+throw new BadRequest('Invalid payload');    // → 400
+throw new Unauthorized('Token expired');    // → 401
 ```
 
 ---
 
 ## Testing
 
-`createTestApp` boots a fresh Express instance without starting a server — wraps it with supertest.
-
 ```typescript
-import { createTestApp, mockComponents } from '@ts-wire/testing';
+import { createTestApp } from '@ts-wire/testing';
 import { UserController } from '../controllers/user.controller';
-import { UserService } from '../services/user.service';
 
 const mockUserService = {
   findAll: () => [{ id: 1, name: 'Alice' }],
   findById: (id: number) => ({ id, name: 'Alice' }),
 };
 
-const request = createTestApp({
+const api = createTestApp({
   controllers: [UserController],
-  components: mockComponents({ userService: mockUserService }),
+  components: { userService: mockUserService },
 });
 
 it('GET /users returns list', async () => {
-  const res = await request.get('/users');
+  const res = await api.get('/users');
   expect(res.status).toBe(200);
   expect(res.body).toHaveLength(1);
 });
@@ -276,17 +354,15 @@ it('GET /users returns list', async () => {
 
 ## Handler Signature
 
-Every route handler receives **three arguments** (four if you need `next`):
-
 ```typescript
 (req: Request, res: Response, components: YourComponents, next?: NextFunction) => void
 ```
 
-`components` is the merged result of `bootstrap({ components })`, `@With`, and `@With` on the class. Destructure what you need:
+`components` is the merged result of `bootstrap({ components })` + class-level `@With` + method-level `@With`. Destructure what the handler needs:
 
 ```typescript
 @Get('/:id')
-getOne(req: Request, res: Response, { userService }: Container) {
+getOne(req: Request, res: Response, { userService }: Components) {
   res.json(userService.findById(Number(req.params.id)));
 }
 ```
@@ -304,7 +380,7 @@ getOne(req: Request, res: Response, { userService }: Container) {
 }
 ```
 
-**Do not** add `experimentalDecorators` or `emitDecoratorMetadata`. ts-wire uses the TC39 Stage 3 decorator API natively supported in TypeScript 5.x.
+Do **not** add `experimentalDecorators` or `emitDecoratorMetadata` — ts-wire uses the TC39 Stage 3 decorator API natively supported in TypeScript 5.x.
 
 ---
 
