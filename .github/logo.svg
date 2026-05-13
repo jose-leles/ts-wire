@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Background -->
+  <rect width="200" height="200" rx="36" fill="#0f172a"/>
+
+  <!-- Wire traces — W shape -->
+  <line x1="40"  y1="55"  x2="40"  y2="145" stroke="#3178c6" stroke-width="9" stroke-linecap="round"/>
+  <line x1="40"  y1="145" x2="100" y2="108" stroke="#3178c6" stroke-width="9" stroke-linecap="round"/>
+  <line x1="100" y1="108" x2="160" y2="145" stroke="#3178c6" stroke-width="9" stroke-linecap="round"/>
+  <line x1="160" y1="55"  x2="160" y2="145" stroke="#3178c6" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Horizontal top bar -->
+  <line x1="40" y1="55" x2="160" y2="55" stroke="#3178c6" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Nodes -->
+  <circle cx="40"  cy="55"  r="11" fill="#60a5fa"/>
+  <circle cx="160" cy="55"  r="11" fill="#60a5fa"/>
+  <circle cx="40"  cy="145" r="11" fill="#60a5fa"/>
+  <circle cx="160" cy="145" r="11" fill="#60a5fa"/>
+  <circle cx="100" cy="108" r="11" fill="#60a5fa"/>
+  <circle cx="100" cy="55"  r="8"  fill="#1e40af"/>
+</svg>

@@ -1,18 +1,26 @@
-# ts-wire
+<p align="center">
+  <img src=".github/logo.svg" width="100" alt="ts-wire" />
+</p>
 
-**TypeScript + Express decorator framework — clean, simple, vibe-coding ready**
+<h1 align="center">ts-wire</h1>
 
-![npm version](https://img.shields.io/npm/v/@ts-wire/core?style=flat-square)
-![GitHub stars](https://img.shields.io/github/stars/jose-leles/ts-wire?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@ts-wire/core"><img src="https://img.shields.io/npm/v/@ts-wire/core?style=flat-square" alt="npm version" /></a>
+  <a href="https://github.com/jose-leles/ts-wire"><img src="https://img.shields.io/github/stars/jose-leles/ts-wire?style=flat-square" alt="GitHub stars" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" />
+</p>
 
 ---
 
 ## What
 
-ts-wire wraps Express with TC39 Stage 3 decorators — no `experimentalDecorators`, no `reflect-metadata`. The library owns the **communication layer**: routing, middleware, auth, validation, caching. You own **business logic and output**.
+Stop wiring Express by hand.
 
-Built for vibe coding: describe what you want, get working routes.
+ts-wire gives you decorator-driven routing, auth, validation, caching, sockets, and cron jobs — all from the same mental model. Describe what you want, get working routes.
+
+Built on TC39 Stage 3 decorators — no `experimentalDecorators`, no `reflect-metadata`, no legacy flags. TypeScript 5.x native, works out of the box.
+
+NestJS power without the complexity: no module system, no circular dependency hell, no magic DI container. One `components.ts` wires everything — read it top to bottom and every dependency is explicit.
 
 ---
 
@@ -43,7 +51,6 @@ export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 import { Controller, Get, Post, With } from '@ts-wire/core';
 import { RequireAuth } from '@ts-wire/auth';
 import { Validate } from '@ts-wire/validate';
-import { Cache } from '@ts-wire/cache';
 import type { Request, Response } from 'express';
 import { CreateUserSchema } from '../schemas/in/create-user';
 import type { Components } from '../components';
@@ -53,7 +60,6 @@ import type { Components } from '../components';
 @With({ userService: components.userService })
 export class UserController {
   @Get('/')
-  @Cache({ ttlMs: 30_000 })
   list(_req: Request, res: Response, { userService }: Components) {
     res.json(userService.findAll());
   }
@@ -188,19 +194,19 @@ export class UserScheduler {
 
 ## Packages
 
-| Package | Install | Description |
-|---------|---------|-------------|
-| `@ts-wire/core` | `npm i @ts-wire/core` | `@Controller`, HTTP decorators, `@With`, `@Use`, `TsBoot` |
-| `@ts-wire/errors` | `npm i @ts-wire/errors` | `NotFound`, `BadRequest`, `Unauthorized`, `Forbidden`, `Conflict`, `UnprocessableEntity`, `TooManyRequests`, `InternalError` |
-| `@ts-wire/auth` | `npm i @ts-wire/auth` | `@RequireAuth()`, `configureAuth({ secret })` — JWT via Bearer token |
-| `@ts-wire/validate` | `npm i @ts-wire/validate` | `@Validate(ZodSchema, source?)` — Zod validation on body / query / params |
-| `@ts-wire/cache` | `npm i @ts-wire/cache` | `@Cache({ ttlMs, key?, store? })`, `@Idempotent({ header?, ttlMs? })` |
-| `@ts-wire/storage` | `npm i @ts-wire/storage` | `@RequireFile({ field?, maxSizeMb?, allowedTypes? })` — multer upload |
-| `@ts-wire/rate-limit` | `npm i @ts-wire/rate-limit` | `@RateLimit({ max?, windowMs?, message? })` — express-rate-limit wrapper |
-| `@ts-wire/socket` | `npm i @ts-wire/socket` | `@SocketController`, `@OnEvent`, `@OnConnect`, `@OnDisconnect`, `SocketService` |
-| `@ts-wire/scheduler` | `npm i @ts-wire/scheduler` | `@Scheduler`, `@Cron('* * * * *')`, `TsScheduler` |
-| `@ts-wire/swagger` | `npm i @ts-wire/swagger` | `setupSwagger(app, controllers)`, optional `@ApiDoc`, `@ApiTag` |
-| `@ts-wire/testing` | `npm i -D @ts-wire/testing` | `createTestApp(options)`, `mockComponents(overrides)` — supertest wrapper |
+| Package | Install | Docs |
+|---------|---------|------|
+| `@ts-wire/core` | `npm i @ts-wire/core` | this file |
+| `@ts-wire/errors` | `npm i @ts-wire/errors` | [→ docs](packages/errors/README.md) |
+| `@ts-wire/auth` | `npm i @ts-wire/auth` | [→ docs](packages/auth/README.md) |
+| `@ts-wire/validate` | `npm i @ts-wire/validate` | [→ docs](packages/validate/README.md) |
+| `@ts-wire/cache` | `npm i @ts-wire/cache` | [→ docs](packages/cache/README.md) |
+| `@ts-wire/storage` | `npm i @ts-wire/storage` | [→ docs](packages/storage/README.md) |
+| `@ts-wire/rate-limit` | `npm i @ts-wire/rate-limit` | [→ docs](packages/rate-limit/README.md) |
+| `@ts-wire/socket` | `npm i @ts-wire/socket` | [→ docs](packages/socket/README.md) |
+| `@ts-wire/scheduler` | `npm i @ts-wire/scheduler` | [→ docs](packages/scheduler/README.md) |
+| `@ts-wire/swagger` | `npm i @ts-wire/swagger` | [→ docs](packages/swagger/README.md) |
+| `@ts-wire/testing` | `npm i -D @ts-wire/testing` | [→ docs](packages/testing/README.md) |
 
 ---
 
@@ -309,8 +315,8 @@ import { setupSwagger } from '@ts-wire/swagger';
 const server = app.bootstrap({ controllers });
 setupSwagger(server, controllers, { title: 'My API', version: '1.0.0' });
 
-// GET /api-docs   → OpenAPI JSON spec
-// GET /api-docs/ui/ → Swagger UI
+// GET /api-docs      → OpenAPI JSON spec
+// GET /api-docs/ui/  → Swagger UI
 ```
 
 ### Error classes — `@ts-wire/errors`
